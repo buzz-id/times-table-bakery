@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Times Table Bakery</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one centred column of "kitchen counters" (cards); times = trays of cookies (rows × columns), sharing = cookies dealt onto plates. */
+:root{
+  --bg:#E9F4F9; --surface:#FFFFFF; --surface-2:#F2F8FB; --ink:#1D3341; --muted:#557083; --line:#D3E4ED;
+  --tray:#CADDE7; --tray-edge:#A3BFCE; --slot:#B4CCD9;
+  --cookie:#E8AE55; --cookie-edge:#B07526; --chip:#5A3720;
+  --plate:#FFFFFF; --plate-edge:#B4CBD8;
+  --accent:#D23D5C; --accent-ink:#FFFFFF; --accent-soft:#FBDCE3;
+  --good:#1D7F55; --good-soft:#D9F1E5; --hint:#9A5800; --hint-soft:#FCEBD2;
+  --display:"Fredoka","Nunito","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1C26; --surface:#162934; --surface-2:#1B3140; --ink:#E6F0F6; --muted:#9BB3C2; --line:#25404F;
+  --tray:#29475A; --tray-edge:#3B6278; --slot:#21394A;
+  --cookie:#E3A64B; --cookie-edge:#9E6620; --chip:#3E2412;
+  --plate:#203A4A; --plate-edge:#3B6278;
+  --accent:#F27C93; --accent-ink:#2A0B13; --accent-soft:#4A2330;
+  --good:#5ACC96; --good-soft:#163D2D; --hint:#F2B55A; --hint-soft:#3D2C12;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0E1C26; --surface:#162934; --surface-2:#1B3140; --ink:#E6F0F6; --muted:#9BB3C2; --line:#25404F;
+  --tray:#29475A; --tray-edge:#3B6278; --slot:#21394A;
+  --cookie:#E3A64B; --cookie-edge:#9E6620; --chip:#3E2412;
+  --plate:#203A4A; --plate-edge:#3B6278;
+  --accent:#F27C93; --accent-ink:#2A0B13; --accent-soft:#4A2330;
+  --good:#5ACC96; --good-soft:#163D2D; --hint:#F2B55A; --hint-soft:#3D2C12;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:940px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(2.1rem,6vw,3.2rem);letter-spacing:-.01em}
+h2{font-size:clamp(1.5rem,4vw,1.9rem)}
+h3{font-size:1.25rem}
+p{margin:0}
+b{font-weight:800}
+.eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+/* header */
+.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center}
+.hero-text{display:flex;flex-direction:column;gap:14px;min-width:0}
+.lede{font-size:1.15rem;max-width:40ch}
+.lede .eq{white-space:nowrap}
+.hero-art{display:flex;flex-direction:column;align-items:center;gap:6px}
+.hero-art .cap{font-family:var(--display);font-size:1.5rem;font-weight:600}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;border-radius:999px;padding:8px 14px;font-weight:700;font-size:.95rem;color:var(--muted);min-height:40px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.tabs button{font-family:var(--display);font-weight:600;font-size:1.05rem;padding:8px 18px;min-height:46px}
+.pill{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:6px 14px 6px 8px;font-weight:700;min-height:44px}
+.pill svg{width:28px;height:28px}
+
+/* cards */
+.card{background:var(--surface);border-radius:22px;padding:clamp(18px,4vw,30px);display:flex;flex-direction:column;gap:18px;border:2px solid var(--line)}
+.head{display:flex;flex-direction:column;gap:4px}
+
+/* learn strips */
+.learn{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.lcard{display:flex;flex-direction:column;gap:10px;background:var(--surface-2);border-radius:16px;padding:14px}
+.lcard .num{font-family:var(--display);font-weight:600;color:var(--accent);font-size:.95rem}
+.lcard .pic{display:flex;align-items:center;justify-content:center;min-height:150px}
+.lcard .pic svg{width:100%;height:auto;max-height:170px}
+.lcard p{font-size:.98rem}
+.lcard .eq{white-space:nowrap}
+.eq{font-family:var(--display);font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+
+/* svg pieces */
+.tray-b{fill:var(--tray);stroke:var(--tray-edge);stroke-width:3}
+.slot{fill:var(--slot)}
+.ck-b{fill:var(--cookie);stroke:var(--cookie-edge);stroke-width:2}
+.ck-c{fill:var(--chip)}
+.plate{fill:var(--plate);stroke:var(--plate-edge);stroke-width:3}
+.rowlab{font-family:var(--display);font-weight:600;font-size:20px;fill:var(--accent)}
+.rowhit{fill:transparent;cursor:pointer}
+.rowhit.lit{fill:var(--accent-soft)}
+.rowhit:hover{fill:var(--accent-soft)}
+.tray .ck,.tray text,.board .ck,.board .dimple,.board .guide,.board .ax{pointer-events:none}
+.pop{transform-box:fill-box;transform-origin:center;animation:pop .28s cubic-bezier(.3,1.6,.6,1) both}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.tri-shape{fill:var(--surface-2);stroke:var(--accent);stroke-width:4;stroke-linejoin:round}
+.tri-line{stroke:var(--accent);stroke-width:2.5;opacity:.5}
+.tri-n{font-family:var(--display);font-weight:600;fill:var(--ink);text-anchor:middle;font-variant-numeric:tabular-nums}
+.tri-n.q{fill:var(--accent)}
+.tri-sym{font-family:var(--display);font-weight:600;fill:var(--muted);text-anchor:middle;font-size:18px}
+
+/* puzzle */
+.puzzle{border-color:var(--accent)}
+.ptop{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.steps li{display:flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px 5px 5px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:.92rem}
+.steps li span{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--ink);font-family:var(--display);font-size:.9rem}
+.steps li.now{background:var(--accent-soft);color:var(--ink)}
+.steps li.now span{background:var(--accent);color:var(--accent-ink)}
+.steps li.done{color:var(--good)}
+.steps li.done span{background:var(--good);color:var(--surface)}
+#stage{display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;min-height:360px}
+.ask{font-family:var(--display);font-weight:500;font-size:clamp(1.35rem,4vw,1.7rem);max-width:30ch;text-wrap:balance}
+.ask b{color:var(--accent);font-weight:600}
+.tip{color:var(--muted);font-weight:700}
+.tray-wrap{width:100%;display:flex;justify-content:center}
+.tray-wrap svg{width:100%;height:auto}
+.cap{font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.steppers{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.stepper{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--surface-2);border-radius:16px;padding:10px 14px}
+.stepper .l{font-weight:800;font-size:.9rem;color:var(--muted)}
+.stepper .c{display:flex;align-items:center;gap:10px}
+.stepper output{font-family:var(--display);font-weight:600;font-size:2rem;min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
+.sb{width:52px;height:52px;border-radius:50%;border:2px solid var(--line);background:var(--surface);font-family:var(--display);font-size:1.7rem;font-weight:600;line-height:1}
+.sb:hover:not(:disabled){border-color:var(--accent)}
+.sb:disabled{opacity:.35;cursor:default}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.choice{min-width:92px;height:80px;padding:0 16px;border-radius:18px;border:3px solid var(--line);background:var(--surface);font-family:var(--display);font-weight:600;font-size:2.1rem;font-variant-numeric:tabular-nums}
+.choice:hover:not(:disabled){border-color:var(--accent);transform:translateY(-2px)}
+.choice.right{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.choice.wrong{opacity:.38}
+.choice:disabled{cursor:default}
+.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.fb{min-height:1.5em;font-weight:700;max-width:46ch;border-radius:14px}
+.fb.good{background:var(--good-soft);color:var(--good);padding:10px 16px}
+.fb.hint{background:var(--hint-soft);color:var(--hint);padding:10px 16px}
+.fb .eq{color:inherit}
+.act{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.go{border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-family:var(--display);font-weight:600;font-size:1.25rem;padding:14px 30px;min-height:56px}
+.go:hover:not(:disabled){filter:brightness(1.06)}
+.ghost{border:2px solid var(--line);background:var(--surface-2);border-radius:999px;padding:10px 20px;font-weight:800;min-height:48px}
+.ghost:hover:not(:disabled){border-color:var(--accent)}
+.ghost:disabled{opacity:.4;cursor:default}
+.spin{animation:spin .55s cubic-bezier(.3,1.3,.6,1) both}
+@keyframes spin{from{transform:rotate(-90deg) scale(.75)}to{transform:none}}
+
+.boxes{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.box{display:flex;flex-direction:column;align-items:center;gap:6px;width:96px}
+.box-in{width:100%;aspect-ratio:1.25;max-width:100%;border:3px dashed var(--cookie-edge);border-radius:12px;background:var(--surface-2);display:grid;place-items:center;padding:6px}
+.box-in svg{width:100%;height:auto}
+.box.new .box-in{animation:pop .3s cubic-bezier(.3,1.6,.6,1) both}
+.tag{font-family:var(--display);font-weight:600;font-size:1.6rem;font-variant-numeric:tabular-nums;min-width:2.4ch;border-radius:10px}
+.box.miss .tag{background:var(--accent-soft);color:var(--accent);padding:0 10px}
+.box.miss .tag.filled{background:var(--good-soft);color:var(--good)}
+
+.plates{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.plate-btn{display:flex;flex-direction:column;align-items:center;gap:2px;width:122px;padding:8px 6px 6px;border-radius:18px;border:2px solid var(--line);background:var(--surface-2)}
+.plate-btn:hover:not(:disabled){border-color:var(--accent)}
+.plate-btn:disabled{cursor:default}
+.plate-btn svg{width:100%;height:auto}
+.plate-btn .pc{font-family:var(--display);font-weight:600;font-size:1.3rem;font-variant-numeric:tabular-nums}
+.fact{width:200px;max-width:70%}
+.fact svg{width:100%;height:auto}
+
+.done{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:center;text-align:left;padding-block:12px}
+.done .txt{display:flex;flex-direction:column;gap:12px;max-width:36ch}
+.done h3{font-size:1.8rem}
+.sticker svg{width:170px;height:170px}
+
+.week{display:flex;flex-direction:column;gap:10px;border-top:2px dashed var(--line);padding-top:16px}
+.wk{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;align-items:center;max-width:540px}
+.wk-l{font-weight:800;font-size:.85rem;color:var(--muted)}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.day{display:flex;justify-content:center}
+.day svg{width:100%;max-width:42px;height:auto}
+.dlab{text-align:center;font-size:.78rem;font-weight:800;color:var(--muted)}
+.dlab.today{color:var(--ink)}
+.ring{fill:none;stroke:var(--line);stroke-width:3;stroke-dasharray:5 5}
+.day.today .ring{stroke:var(--accent);stroke-dasharray:none}
+
+/* free play */
+.play{display:flex;flex-direction:column;gap:16px}
+.readout{display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline}
+.board-wrap{overflow-x:auto}
+.board{display:block;width:100%;height:auto;max-width:620px;touch-action:manipulation}
+.board .hit{fill:transparent;cursor:pointer}
+.board .cell .ck{opacity:0;transition:opacity .1s}
+.board .cell.on .ck{opacity:1}
+.board .cell.on .dimple{opacity:0}
+.dimple{fill:var(--slot)}
+.guide{stroke:var(--tray-edge);stroke-width:2;stroke-dasharray:4 4}
+.ax{font-family:var(--display);font-weight:600;font-size:12px;fill:var(--muted);text-anchor:middle}
+.ax.on{fill:var(--accent);font-size:14px}
+.big{font-family:var(--display);font-weight:600;font-size:clamp(2.4rem,7vw,3.4rem);line-height:1;font-variant-numeric:tabular-nums;color:var(--accent)}
+.words{font-size:1.2rem;font-weight:700}
+.divline{font-weight:700;color:var(--muted)}
+.divline .eq{font-size:1.15rem}
+.small{color:var(--muted);font-size:.95rem;max-width:62ch}
+
+.grown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 28px}
+.grown li{margin-bottom:6px}
+.grown ul{margin:0;padding-left:20px}
+
+/* speed game */
+.g-start,.g-end{display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:28px;align-items:center}
+.g-end{grid-template-columns:200px minmax(0,1fr)}
+.g-opts,.g-res{display:flex;flex-direction:column;gap:14px;min-width:0}
+.g-lead{font-size:1.1rem;max-width:52ch}
+.g-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.g-row .wk-l{min-width:5.5em}
+.g-side{display:flex;flex-direction:column;align-items:center;gap:8px}
+.jar{width:100%;max-width:170px}
+.jar svg{width:100%;height:auto}
+.jar-lid{fill:var(--accent)}
+.jar-glass{fill:var(--surface-2);stroke:var(--tray-edge);stroke-width:4}
+.jar-shine{fill:var(--surface);opacity:.7}
+.jar-more{font-family:var(--display);font-weight:600;font-size:20px;fill:var(--accent);text-anchor:middle}
+.g-count{display:grid;place-items:center;align-content:center;gap:8px;min-height:340px;text-align:center}
+.g-count span{font-family:var(--display);font-weight:700;font-size:clamp(5rem,20vw,8rem);color:var(--accent);line-height:1}
+.beat{animation:pop .4s cubic-bezier(.3,1.6,.6,1) both}
+.g-play{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:24px;align-items:start}
+.g-main{position:relative;display:flex;flex-direction:column;gap:16px;min-width:0}
+.g-hud{display:flex;align-items:center;gap:14px}
+.g-score{display:flex;flex-direction:column;line-height:1.1}
+.g-score #gs{font-family:var(--display);font-weight:600;font-size:2.2rem;font-variant-numeric:tabular-nums;color:var(--accent)}
+.timer{flex:1;min-width:0;height:18px;border-radius:999px;background:var(--surface-2);border:2px solid var(--line);overflow:hidden}
+.timer i{display:block;height:100%;background:var(--good);transform-origin:left center}
+.timer i.low{background:var(--accent)}
+.g-secs{font-family:var(--display);font-weight:600;font-size:1.3rem;font-variant-numeric:tabular-nums;min-width:3.2ch;text-align:right;margin-left:auto}
+.g-q{font-family:var(--display);font-weight:600;font-size:clamp(3rem,11vw,4.8rem);text-align:center;line-height:1.1;font-variant-numeric:tabular-nums}
+.g-ch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:440px;width:100%;margin:0 auto}
+.g-ch .choice{width:100%;min-width:0;height:84px}
+.g-msg{min-height:2.6em;text-align:center;font-weight:800;font-size:1.1rem;display:grid;place-items:center}
+.g-msg.good{color:var(--good)}
+.g-msg.hint{color:var(--hint)}
+.g-msg .eq{color:inherit}
+.g-pops{position:absolute;top:0;left:0;pointer-events:none}
+.g-pop{position:absolute;left:3.4em;top:-.7em;font-family:var(--display);font-weight:700;font-size:1.3rem;color:var(--good);animation:floatUp .9s ease-out both;white-space:nowrap}
+@keyframes floatUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-36px)}}
+.stars{display:flex;gap:6px}
+.stars svg{width:44px;height:44px}
+.star-on{fill:var(--cookie);stroke:var(--cookie-edge);stroke-width:2}
+.star-off{fill:none;stroke:var(--line);stroke-width:2.5}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.tile{background:var(--surface-2);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile b{font-family:var(--display);font-weight:600;font-size:1.6rem;font-variant-numeric:tabular-nums}
+.g-miss{display:flex;flex-direction:column;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--hint-soft);color:var(--hint);border-radius:999px;padding:4px 12px;font-weight:800;font-variant-numeric:tabular-nums}
+.chip.ok{background:var(--good-soft);color:var(--good)}
+
+@media (max-width:820px){
+  .learn{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .g-start,.g-end,.g-play{grid-template-columns:1fr}
+  .g-play .g-side{display:none}
+  .g-end .g-side{flex-direction:row;justify-content:center}
+  .g-end .jar{max-width:110px}
+  .g-start .jar{max-width:120px}
+  .hero,.grown{grid-template-columns:1fr}
+  .hero-art{order:-1}
+  .choice{min-width:80px;height:70px;font-size:1.8rem}
+  .plate-btn{width:100px}
+}
+@media (max-width:420px){
+  .learn{grid-template-columns:1fr}
+  .box{width:78px}
+}
+@media (prefers-reduced-motion:reduce){
+  .pop,.spin,.shake,.box.new .box-in,.beat{animation:none}
+  .g-pop{animation:none;opacity:.9}
+  .choice:hover:not(:disabled){transform:none}
+}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-text">
+      <span class="eyebrow">A daily puzzle for 6 to 8 year olds</span>
+      <h1>Times Table Bakery</h1>
+      <p class="lede">A times sum is a tray of cookies: <span class="eq">3 × 4</span> means <b>3 rows of 4</b>. A sharing sum is cookies on plates: <span class="eq">12 ÷ 3</span> means <b>12 shared by 3</b>. Bake every day, earn stickers, then race the clock in Cookie Rush.</p>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Which times tables">
+          <button data-level="starter" aria-pressed="true">2, 5, 10</button>
+          <button data-level="next" aria-pressed="false">2, 3, 4</button>
+          <button data-level="big" aria-pressed="false">6 to 9</button>
+        </div>
+        <span class="pill" id="streakPill"></span>
+      </div>
+    </div>
+    <div class="hero-art" id="heroArt"></div>
+  </header>
+
+  <section class="card" aria-labelledby="learnH">
+    <div class="head">
+      <span class="eyebrow">How times works</span>
+      <h2 id="learnH">From plates to trays</h2>
+    </div>
+    <div class="learn" id="learn"></div>
+  </section>
+
+  <section class="card" aria-labelledby="learnD">
+    <div class="head">
+      <span class="eyebrow">How sharing works</span>
+      <h2 id="learnD">Sharing is dividing</h2>
+    </div>
+    <div class="learn" id="learnDiv"></div>
+  </section>
+
+  <section class="card puzzle" aria-labelledby="puzH">
+    <div class="ptop">
+      <div class="head">
+        <span class="eyebrow" id="mode">Today's puzzle</span>
+        <h2 id="puzH">Today's bake</h2>
+      </div>
+      <div class="seg tabs" role="group" aria-label="Which bake">
+        <button data-kind="times" aria-pressed="true">Times ×</button>
+        <button data-kind="div" aria-pressed="false">Sharing ÷</button>
+      </div>
+    </div>
+    <ol class="steps" id="steps"></ol>
+    <div id="stage"></div>
+    <div class="week">
+      <span class="eyebrow">Sticker chart: last 7 days</span>
+      <div class="wk" id="wk"></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="gameH">
+    <div class="head">
+      <span class="eyebrow">Speed game</span>
+      <h2 id="gameH">Cookie Rush</h2>
+    </div>
+    <div id="game"></div>
+  </section>
+
+  <section class="card" aria-labelledby="playH">
+    <div class="head">
+      <span class="eyebrow">Free play</span>
+      <h2 id="playH">The giant tray</h2>
+    </div>
+    <div class="play">
+      <div class="readout">
+        <span class="big" id="bEq">3 × 4 = 12</span>
+        <span class="words" id="bWords">3 rows of 4 cookies</span>
+      </div>
+      <p class="divline" id="bDiv"></p>
+      <div class="board-wrap" id="boardWrap"></div>
+      <p class="small">Tap any spot on the tray, up to 20 × 20. The cookies fill every row and column up to it. The dashed lines mark every 5, so big trays are easier to count. Try finding all the trays that make 24.</p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="grownH">
+    <div class="head">
+      <span class="eyebrow">For grown-ups</span>
+      <h2 id="grownH">Five minutes a day</h2>
+    </div>
+    <div class="grown">
+      <ul>
+        <li>There are two daily puzzles, Times and Sharing. Each has 4 short steps and earns its own sticker. The same date and level always give the same puzzle, so siblings can compare.</li>
+        <li>Read "×" aloud as "rows of" or "groups of". Read "÷" as "shared by". Say "12 shared by 3" before you say "12 divided by 3".</li>
+        <li>Start with Times on 2, 5 and 10. Add Sharing once the times bake feels easy. Move up a level when both feel easy two days running.</li>
+      </ul>
+      <ul>
+        <li>Wrong answers just fade out. Let your child try again. Point at the rows or plates rather than giving the answer.</li>
+        <li>Share real things: grapes onto plates, cards to players. Find arrays at home: egg cartons, muffin tins, window panes.</li>
+        <li>Cookie Rush is optional speed practice. Points never go down, and a missed fact comes back later in the same round. If the clock feels stressful, pick Relaxed mode.</li>
+        <li>Stickers, the streak and best scores are saved in this browser on this device only.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const store={
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const LEVELS={
+  starter:{tables:[2,5,10],max:6,share:{plates:[2,5],qmax:5}},
+  next:{tables:[2,3,4],max:8,share:{plates:[2,3,4],qmax:6}},
+  big:{tables:[6,7,8,9],max:10,share:{plates:[6,7,8,9],qmax:5}}
+};
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const TODAY=ymd(new Date());
+let level=store.get('ttb-level','starter'); if(!LEVELS[level]) level='starter';
+let kind=store.get('ttb-mode','times'); if(kind!=='times'&&kind!=='div') kind='times';
+
+/* seeded random */
+function hashStr(s){let h=2166136261;for(const ch of s){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const pick=(r,a)=>a[Math.floor(r()*a.length)];
+const int=(r,lo,hi)=>lo+Math.floor(r()*(hi-lo+1));
+function shuffle(r,a){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function pair(r,L){const t=pick(r,L.tables),n=int(r,2,L.max);return r()<.5?[t,n]:[n,t]}
+function opts(r,ans,wrongs){
+  const out=[ans];
+  for(const w of wrongs){if(out.length<3&&w>0&&!out.includes(w))out.push(w)}
+  let k=1;while(out.length<3){const w=ans+k;if(w>0&&!out.includes(w))out.push(w);k=k>0?-k:-k+1}
+  return shuffle(r,out);
+}
+function makeTimesSet(r,L){
+  const [ba,bb]=pair(r,L);
+  let [ca,cb]=pair(r,L); if(ca===ba&&cb===bb){cb=cb<L.max?cb+1:cb-1}
+  const t=pick(r,L.tables),len=5,miss=int(r,1,len-1),sAns=(miss+1)*t;
+  let [fa,fb]=pair(r,L); if(fa===fb){fb=fb<L.max?fb+1:fb-1}
+  return{
+    build:{a:ba,b:bb},
+    count:{a:ca,b:cb,opts:opts(r,ca*cb,[ca*cb+cb,ca*cb-cb,ca+cb])},
+    skip:{t,len,miss,opts:opts(r,sAns,[sAns+1,sAns-1,sAns+t])},
+    flip:{a:fa,b:fb,opts:opts(r,fa*fb,[fa+fb,fa*fb+fa,fa*fb-1])}
+  };
+}
+function makeDivSet(r,L){
+  const p=pick(r,L.share.plates),q=int(r,2,L.share.qmax);
+  const rb=pick(r,L.tables),rows=int(r,2,L.max);
+  const ma=pick(r,L.tables),mb=int(r,2,L.max);
+  const bt=pick(r,L.tables),bn=int(r,2,L.max);
+  return{
+    share:{p,q},
+    rows:{rows,b:rb,opts:opts(r,rows,[rows+1,rows-1,rb])},
+    miss:{a:ma,b:mb,opts:opts(r,mb,[mb+1,mb-1,ma])},
+    boxes:{t:bt,n:bn,opts:opts(r,bn,[bn+1,bn-1,bt])}
+  };
+}
+
+/* drawing */
+function cookie(cx,cy,r,pop){
+  return `<g transform="translate(${cx} ${cy})"><g class="ck${pop?' pop':''}"><circle r="${r}" class="ck-b"/><circle cx="${(-r*.35).toFixed(1)}" cy="${(-r*.25).toFixed(1)}" r="${(r*.15).toFixed(1)}" class="ck-c"/><circle cx="${(r*.32).toFixed(1)}" cy="${(-r*.12).toFixed(1)}" r="${(r*.13).toFixed(1)}" class="ck-c"/><circle cx="${(-r*.02).toFixed(1)}" cy="${(r*.38).toFixed(1)}" r="${(r*.14).toFixed(1)}" class="ck-c"/></g></g>`;
+}
+function traySVG(rows,cols,o={}){
+  const C=44,P=12,R=16,labW=o.labels?60:0,w=cols*C+P*2,h=rows*C+P*2,W=w+labW;
+  const scale=o.scale||1.2;
+  let s=`<svg viewBox="0 0 ${W} ${h}" class="tray${o.cls?' '+o.cls:''}" style="max-width:${Math.round(W*scale)}px" role="img" aria-label="${rows} rows of ${cols} cookies">`;
+  s+=`<rect x="1.5" y="1.5" width="${w-3}" height="${h-3}" rx="14" class="tray-b"/>`;
+  for(let i=0;i<rows;i++){
+    if(o.rowHit) s+=`<rect class="rowhit${i<(o.lit||0)?' lit':''}" data-row="${i}" tabindex="0" role="button" aria-label="Count row ${i+1}" x="${P/2}" y="${P+i*C+2}" width="${w-P}" height="${C-4}" rx="10"/>`;
+    for(let j=0;j<cols;j++){
+      const isNew=o.popFrom&&(i>=o.popFrom[0]||j>=o.popFrom[1]);
+      s+=cookie(P+j*C+C/2,P+i*C+C/2,R,isNew);
+    }
+    if(o.labels&&o.labels[i]!=='') s+=`<text class="rowlab" x="${w+10}" y="${P+i*C+C/2}" dominant-baseline="central">${o.labels[i]}</text>`;
+  }
+  return s+'</svg>';
+}
+/* a loose pile: cookies sit 10 to a row; taken cookies leave empty dimples */
+function pileSVG(left,total,scale,per){
+  per=per||10;
+  const C=34,P=10,R=12,cols=Math.min(total,per),rows=Math.ceil(total/per),w=cols*C+P*2,h=rows*C+P*2;
+  let s=`<svg viewBox="0 0 ${w} ${h}" class="tray" style="max-width:${Math.round(w*(scale||1.2))}px" role="img" aria-label="${left} cookies left">`;
+  s+=`<rect x="1.5" y="1.5" width="${w-3}" height="${h-3}" rx="14" class="tray-b"/>`;
+  for(let i=0;i<total;i++){const r=Math.floor(i/per),c=i%per,cx=P+c*C+C/2,cy=P+r*C+C/2;
+    s+=i<left?cookie(cx,cy,R):`<circle cx="${cx}" cy="${cy}" r="${R-4}" class="slot"/>`}
+  return s+'</svg>';
+}
+function plateSVG(n){
+  const W=110,H=84;let s=`<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><ellipse cx="${W/2}" cy="${H/2}" rx="${W/2-3}" ry="${H/2-3}" class="plate"/>`;
+  const per=4,rows=Math.ceil(n/per);
+  for(let i=0;i<n;i++){const r=Math.floor(i/per),inRow=Math.min(per,n-r*per),c=i%per;
+    s+=cookie(W/2+(c-(inRow-1)/2)*25,H/2+(r-(rows-1)/2)*25,11.5)}
+  return s+'</svg>';
+}
+function platesSVG(n,k){
+  const PW=96,H=92,top=Math.min(n,2),W=top*PW+8,rowsP=Math.ceil(n/2),HH=rowsP*H+8;
+  let s=`<svg viewBox="0 0 ${W} ${HH}" role="img" aria-label="${n} plates with ${k} cookies on each">`;
+  for(let p=0;p<n;p++){
+    const pr=Math.floor(p/2),inRow=Math.min(2,n-pr*2),pc=p%2;
+    const cx=4+(W-8-inRow*PW)/2+pc*PW+PW/2,cy=4+pr*H+H/2;
+    s+=`<ellipse cx="${cx}" cy="${cy}" rx="${PW/2-4}" ry="${H/2-5}" class="plate"/>`;
+    const cols=Math.ceil(Math.sqrt(k)),rows=Math.ceil(k/cols);
+    for(let i=0;i<k;i++){const rr=Math.floor(i/cols),cc=i%cols;
+      s+=cookie(cx+(cc-(cols-1)/2)*30,cy+(rr-(rows-1)/2)*30,12)}
+  }
+  return s+'</svg>';
+}
+function miniSVG(t){
+  const cols=Math.min(t,5),rows=Math.ceil(t/5),C=18,W=5*C+4,H=2*C+4;
+  let s=`<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">`;
+  for(let i=0;i<t;i++){const r=Math.floor(i/5),c=i%5;
+    const offY=rows===1?C/2:0;
+    s+=cookie(2+C/2+c*C+(5-cols)*C/2,2+C/2+r*C+offY,7)}
+  return s+'</svg>';
+}
+/* fact triangle: product on top, the two factors underneath */
+function triSVG(top,l,r){
+  const cls=v=>v==='?'?'tri-n q':'tri-n';
+  return `<svg viewBox="0 0 220 186" role="img" aria-label="Fact triangle: ${top} at the top, ${l} and ${r} at the bottom">
+    <polygon points="110,8 212,178 8,178" class="tri-shape"/>
+    <line x1="50" y1="112" x2="170" y2="112" class="tri-line"/><line x1="110" y1="112" x2="110" y2="178" class="tri-line"/>
+    <text x="110" y="80" class="${cls(top)}" font-size="34" dominant-baseline="central">${top}</text>
+    <text x="68" y="146" class="${cls(l)}" font-size="30" dominant-baseline="central">${l}</text>
+    <text x="152" y="146" class="${cls(r)}" font-size="30" dominant-baseline="central">${r}</text>
+    </svg>`;
+}
+function stickerSVG(k){
+  let s='<svg viewBox="0 0 200 200" role="img" aria-label="Sticker">';
+  for(let i=0;i<18;i++){const a=i/18*Math.PI*2;s+=`<circle cx="${(100+86*Math.cos(a)).toFixed(1)}" cy="${(100+86*Math.sin(a)).toFixed(1)}" r="16" fill="var(--accent)"/>`}
+  s+='<circle cx="100" cy="100" r="86" fill="var(--accent)"/><circle cx="100" cy="100" r="72" fill="var(--surface)"/>';
+  if(k==='div'){s+='<ellipse cx="100" cy="104" rx="62" ry="46" class="plate"/>'+cookie(78,92,18)+cookie(122,92,18)+cookie(100,122,18)}
+  else s+=cookie(100,100,56);
+  return s+'</svg>';
+}
+function smallSticker(on,k){
+  const inner=!on?'':k==='div'?`<ellipse cx="24" cy="25" rx="17" ry="13" class="plate"/>${cookie(18,22,6)}${cookie(30,22,6)}${cookie(24,30,6)}`:cookie(24,24,17);
+  return `<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" class="ring"/>${inner}</svg>`;
+}
+
+/* stickers, streak & week chart */
+const KEYS={times:'ttb-days',div:'ttb-div-days'};
+const getDays=k=>store.get(KEYS[k],{});
+const doneOn=(k,d)=>!!getDays(k)[d];
+function markDone(k){const d=getDays(k);d[TODAY]=true;store.set(KEYS[k],d)}
+function streak(){
+  const t=getDays('times'),v=getDays('div'),any=k=>t[k]||v[k];
+  const d=new Date();if(!any(ymd(d)))d.setDate(d.getDate()-1);
+  let n=0;while(any(ymd(d))){n++;d.setDate(d.getDate()-1)}
+  return n;
+}
+function renderStreak(){
+  const n=streak(),total=Object.keys(getDays('times')).length+Object.keys(getDays('div')).length;
+  $('#streakPill').innerHTML=`${smallSticker(true,'times')}<span>${n} day streak · ${total} sticker${total===1?'':'s'}</span>`;
+}
+function renderWeek(){
+  const t=getDays('times'),v=getDays('div');let labs='',rowT='',rowD='';
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=ymd(d),td=i===0?' today':'';
+    labs+=`<span class="dlab${td}">${i===0?'Today':d.toLocaleDateString('en-GB',{weekday:'short'})}</span>`;
+    rowT+=`<div class="day${td}" title="Times ${k}">${smallSticker(!!t[k],'times')}</div>`;
+    rowD+=`<div class="day${td}" title="Sharing ${k}">${smallSticker(!!v[k],'div')}</div>`}
+  $('#wk').innerHTML=`<span></span><div class="days">${labs}</div><span class="wk-l">Times</span><div class="days">${rowT}</div><span class="wk-l">Sharing</span><div class="days">${rowD}</div>`;
+}
+
+/* puzzle flow */
+const stage=$('#stage');let P;
+const KINDS={
+  times:{names:['Build','Count','Skip-count','Turn'],title:"Today's times bake",practice:'Times practice'},
+  div:{names:['Share','Rows','Times trick','Boxes'],title:"Today's sharing bake",practice:'Sharing practice'}
+};
+function newPuzzle(k,practice){
+  const seed=practice?(Math.random()*4294967296)>>>0:hashStr(TODAY+'|'+level+(k==='div'?'|div':''));
+  const r=mulberry(seed);
+  P={kind:k,practice,step:0,set:k==='div'?makeDivSet(r,LEVELS[level]):makeTimesSet(r,LEVELS[level])};
+  render();
+}
+function render(){
+  const K=KINDS[P.kind];
+  $('#steps').innerHTML=K.names.map((n,i)=>`<li class="${i<P.step?'done':i===P.step?'now':''}"><span>${i+1}</span>${n}</li>`).join('');
+  const nice=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  $('#mode').textContent=P.practice?'Practice batch':"Today's puzzle · "+nice;
+  $('#puzH').textContent=P.practice?K.practice:K.title;
+  $$('.tabs button').forEach(b=>{const k=b.dataset.kind;b.setAttribute('aria-pressed',String(k===P.kind));
+    b.textContent=(k==='times'?'Times ×':'Sharing ÷')+(doneOn(k,TODAY)?' ✓':'')});
+  const steps=P.kind==='div'?[stepShare,stepRows,stepMissing,stepBoxes]:[stepBuild,stepCount,stepSkip,stepFlip];
+  (P.step<4?steps[P.step]:stepDone)();
+  renderWeek();renderStreak();
+}
+function tail(){return `<p class="fb" id="fb" aria-live="polite"></p><div class="act" id="act"></div>`}
+function hint(msg){const fb=$('#fb');fb.className='fb hint';fb.innerHTML=msg}
+function clearFb(){const fb=$('#fb');fb.className='fb';fb.textContent=''}
+function win(msg){
+  const fb=$('#fb');fb.className='fb good';fb.innerHTML=msg;
+  $('#act').innerHTML=`<button class="go" id="next">${P.step<3?'Next step':'Get my sticker'}</button>`;
+  const nx=$('#next');
+  nx.onclick=()=>{P.step++;if(P.step===4&&!P.practice)markDone(P.kind);render();stage.scrollIntoView({block:'nearest',behavior:'smooth'})};
+  nx.focus({preventScroll:true});
+}
+function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake')}
+function choiceButtons(list,ans,ok,no,onRight){
+  const ch=$('#ch');
+  ch.innerHTML=list.map(v=>`<button class="choice" data-v="${v}">${v}</button>`).join('');
+  ch.addEventListener('click',e=>{
+    const b=e.target.closest('.choice');if(!b||b.disabled)return;
+    if(+b.dataset.v===ans){b.classList.add('right');ch.querySelectorAll('.choice').forEach(x=>x.disabled=true);if(onRight)onRight();win(ok)}
+    else{b.classList.add('wrong');shake(b);b.disabled=true;hint(no)}
+  });
+}
+const countSeq=(n,b)=>Array.from({length:n},(_,i)=>(i+1)*b).join(', ');
+/* tray whose rows can be tapped to show a running total */
+function countingTray(sel,a,b,state){
+  const draw=()=>{$(sel).innerHTML=traySVG(a,b,{rowHit:true,lit:state.shown,labels:Array.from({length:a},(_,i)=>i<state.shown?String((i+1)*b):'')})};
+  const reveal=t=>{const el=t.closest('[data-row]');if(!el)return;state.shown=Math.max(state.shown,+el.dataset.row+1);draw()};
+  $(sel).addEventListener('click',e=>reveal(e.target));
+  $(sel).addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();const i=e.target.dataset.row;reveal(e.target);const n=$(`${sel} [data-row="${i}"]`);if(n)n.focus()}});
+  draw();return draw;
+}
+
+/* ---- times steps ---- */
+function stepBuild(){
+  const{a,b}=P.set.build;let r=1,c=1,locked=false;
+  const stepper=(k,l)=>`<div class="stepper"><span class="l">${l}</span><div class="c"><button class="sb" data-k="${k}" data-d="-1" aria-label="${l}: one less">−</button><output id="o-${k}">1</output><button class="sb" data-k="${k}" data-d="1" aria-label="${l}: one more">+</button></div></div>`;
+  stage.innerHTML=`<p class="ask">Bake <b>${a} rows</b> with <b>${b} cookies</b> in each row.</p>
+    <div class="tray-wrap" id="bt"></div><p class="cap" id="bcap"></p>
+    <div class="steppers">${stepper('r','Rows')}${stepper('c','Cookies in each row')}</div>
+    ${tail()}`;
+  $('#act').innerHTML='<button class="go" id="chk">Check my tray</button>';
+  const draw=(pr,pc)=>{
+    $('#bt').innerHTML=traySVG(r,c,{popFrom:pr?[pr,pc]:null});
+    $('#o-r').textContent=r;$('#o-c').textContent=c;
+    $('#bcap').textContent=`${r} row${r>1?'s':''} of ${c}`;
+    $$('.sb').forEach(x=>{const v=x.dataset.k==='r'?r:c,d=+x.dataset.d;x.disabled=locked||(d<0&&v<=1)||(d>0&&v>=10)});
+  };
+  draw();
+  stage.querySelector('.steppers').addEventListener('click',e=>{
+    const x=e.target.closest('.sb');if(!x||x.disabled)return;
+    const pr=r,pc=c,d=+x.dataset.d;
+    if(x.dataset.k==='r')r=Math.min(10,Math.max(1,r+d));else c=Math.min(10,Math.max(1,c+d));
+    clearFb();draw(pr,pc);
+  });
+  $('#chk').onclick=()=>{
+    if(r===a&&c===b){locked=true;draw();win(`Yes! ${a} rows of ${b} is ${a*b} cookies. We write it as <span class="eq">${a} × ${b} = ${a*b}</span>`)}
+    else{
+      shake($('#chk'));
+      if(r===b&&c===a)hint(`That tray has ${r} rows of ${c}. Same number of cookies, but it's turned around. Try ${a} rows.`);
+      else if(r!==a)hint(`Count your rows going down. You need ${a} rows.`);
+      else hint(`Count across one row. Each row needs ${b} cookies.`);
+    }
+  };
+}
+function stepCount(){
+  const{a,b,opts:list}=P.set.count,st={shown:0};
+  stage.innerHTML=`<p class="ask">How many cookies are on this tray?</p>
+    <p class="tip">Tap each row to count by ${b}s.</p>
+    <div class="tray-wrap" id="ct"></div>
+    <div class="choices" id="ch"></div>${tail()}`;
+  const draw=countingTray('#ct',a,b,st);
+  choiceButtons(list,a*b,
+    `Yes! ${a} rows of ${b} = ${a*b}. Counting by ${b}s: ${countSeq(a,b)}. <span class="eq">${a} × ${b} = ${a*b}</span>`,
+    `Not yet. Tap each row and count by ${b}s.`,
+    ()=>{st.shown=a;draw()});
+}
+function stepSkip(){
+  const{t,len,miss,opts:list}=P.set.skip,ans=(miss+1)*t;
+  let boxes='';
+  for(let i=0;i<len;i++)boxes+=`<div class="box${i===miss?' miss':''}"><div class="box-in">${miniSVG(t)}</div><span class="tag"${i===miss?' id="missTag"':''}>${i===miss?'?':(i+1)*t}</span></div>`;
+  stage.innerHTML=`<p class="ask">Cookies come in <b>boxes of ${t}</b>. Count them box by box.</p>
+    <div class="boxes">${boxes}</div>
+    <p class="tip">Which number is hiding under the "?"</p>
+    <div class="choices" id="ch"></div>${tail()}`;
+  choiceButtons(list,ans,
+    `Yes! ${countSeq(len,t)}. ${miss+1} boxes of ${t} is <span class="eq">${miss+1} × ${t} = ${ans}</span>`,
+    `Not yet. Start at ${t} and add ${t} for each box.`,
+    ()=>{const m=$('#missTag');m.textContent=ans;m.classList.add('filled')});
+}
+function stepFlip(){
+  const{a,b,opts:list}=P.set.flip;let turned=false;
+  stage.innerHTML=`<p class="ask">This tray has <b>${a} rows of ${b}</b>. That's <span class="eq">${a} × ${b} = ${a*b}</span> cookies.</p>
+    <div class="tray-wrap" id="ft"></div><p class="cap" id="fcap"></p>
+    <div class="act"><button class="ghost" id="turn">Turn the tray ↻</button></div>
+    <p class="ask">Turn it, and it has <b>${b} rows of ${a}</b>. How many cookies now?</p>
+    <div class="choices" id="ch"></div>${tail()}`;
+  const draw=anim=>{
+    const [r,c]=turned?[b,a]:[a,b];
+    $('#ft').innerHTML=traySVG(r,c,{cls:anim?'spin':''});
+    $('#fcap').textContent=`${r} rows of ${c}`;
+  };
+  draw(false);
+  $('#turn').onclick=()=>{turned=!turned;draw(true)};
+  choiceButtons(list,a*b,
+    `Same cookies, same number! <span class="eq">${b} × ${a} = ${a} × ${b} = ${a*b}</span>. Turning trick: if you know one, you know the other.`,
+    `Not yet. Tap "Turn the tray" and look. Did any cookies fall off?`,
+    ()=>{if(!turned){turned=true;draw(true)}});
+}
+
+/* ---- sharing (division) steps ---- */
+function stepShare(){
+  const{p,q}=P.set.share,total=p*q;let jar=total,plates=Array(p).fill(0),locked=false;
+  stage.innerHTML=`<p class="ask">Share <b>${total} cookies</b> fairly onto <b>${p} plates</b>.</p>
+    <p class="tip">Tap a plate to give it one cookie. Or deal one to every plate.</p>
+    <div class="tray-wrap" id="jar"></div><p class="cap" id="jcap"></p>
+    <div class="act"><button class="ghost" id="deal">Deal one to each plate</button><button class="ghost" id="reset">Start again</button></div>
+    <div class="plates" id="plates">${plates.map((_,i)=>`<button class="plate-btn" data-i="${i}"></button>`).join('')}</div>
+    ${tail()}`;
+  const btns=$$('#plates .plate-btn');
+  const draw=()=>{
+    $('#jar').innerHTML=pileSVG(jar,total,1);
+    $('#jcap').textContent=jar?`${jar} cookie${jar>1?'s':''} left to share`:'All shared out!';
+    btns.forEach((b,i)=>{b.innerHTML=`${plateSVG(plates[i])}<span class="pc">${plates[i]}</span>`;b.disabled=locked||!jar;b.setAttribute('aria-label',`Plate ${i+1}: ${plates[i]} cookies. Tap to add one.`)});
+    $('#deal').disabled=locked||jar<p;$('#reset').disabled=locked;
+  };
+  const check=()=>{
+    if(jar>0)return;
+    if(plates.every(n=>n===q)){locked=true;draw();win(`Fair share! ${total} shared by ${p} is ${q} each. We write it as <span class="eq">${total} ÷ ${p} = ${q}</span>, because ${p} × ${q} = ${total}.`)}
+    else hint(`Uh oh, that's not fair. Some plates have more than others. Tap "Start again".`);
+  };
+  $('#plates').addEventListener('click',e=>{const b=e.target.closest('.plate-btn');if(!b||b.disabled||!jar)return;plates[+b.dataset.i]++;jar--;clearFb();draw();check()});
+  $('#deal').onclick=()=>{if(jar<p)return;plates=plates.map(n=>n+1);jar-=p;clearFb();draw();check()};
+  $('#reset').onclick=()=>{jar=total;plates=Array(p).fill(0);clearFb();draw()};
+  draw();
+}
+function stepRows(){
+  const{rows,b,opts:list}=P.set.rows,total=rows*b,st={shown:0};
+  stage.innerHTML=`<p class="ask">These <b>${total} cookies</b> are in rows of <b>${b}</b>. How many rows?</p>
+    <p class="tip">Tap the rows and count by ${b}s until you reach ${total}.</p>
+    <div class="tray-wrap" id="rt"></div>
+    <div class="choices" id="ch"></div>${tail()}`;
+  const draw=countingTray('#rt',rows,b,st);
+  choiceButtons(list,rows,
+    `Yes! ${countSeq(rows,b)}. That's ${rows} rows. <span class="eq">${total} ÷ ${b} = ${rows}</span>`,
+    `Not yet. Count the rows going down, not the cookies.`,
+    ()=>{st.shown=rows;draw()});
+}
+function stepMissing(){
+  const{a,b,opts:list}=P.set.miss,t=a*b;
+  stage.innerHTML=`<p class="ask"><b>${t} cookies</b> sit in <b>${a} rows</b>. How many are in each row?</p>
+    <div class="fact" id="tri">${triSVG(t,a,'?')}</div>
+    <p class="tip">Use your times: <span class="eq">${a} × ? = ${t}</span></p>
+    <div class="act"><button class="ghost" id="peek">Peek at the tray</button></div>
+    <div class="tray-wrap" id="pk" hidden></div>
+    <div class="choices" id="ch"></div>${tail()}`;
+  const peek=()=>{$('#pk').innerHTML=traySVG(a,b,{scale:.9});$('#pk').hidden=false;$('#peek').disabled=true};
+  $('#peek').onclick=peek;
+  choiceButtons(list,b,
+    `Yes! <span class="eq">${a} × ${b} = ${t}</span>, so <span class="eq">${t} ÷ ${a} = ${b}</span>. And ${t} ÷ ${b} = ${a} too. Knowing your times helps you share!`,
+    `Not yet. Count by ${a}s up to ${t} and keep track of how many you said. Or peek at the tray.`,
+    ()=>{$('#tri').innerHTML=triSVG(t,a,b)});
+}
+function stepBoxes(){
+  const{t,n,opts:list}=P.set.boxes,total=t*n;let left=total,filled=0;
+  stage.innerHTML=`<p class="ask">You have <b>${total} cookies</b>. Each box holds <b>${t}</b>. Fill the boxes!</p>
+    <div class="tray-wrap" id="pile"></div><p class="cap" id="pcap"></p>
+    <div class="act" id="fillRow"><button class="go" id="fill">Fill a box</button></div>
+    <div class="boxes" id="bx"></div>
+    <div id="bq" hidden style="display:contents"><p class="ask">How many boxes did you fill?</p><div class="choices" id="ch"></div></div>
+    ${tail()}`;
+  const draw=()=>{$('#pile').innerHTML=pileSVG(left,total,1);$('#pcap').textContent=left?`${left} cookies left`:'No cookies left!'};
+  draw();
+  $('#fill').onclick=()=>{
+    if(left<t)return;left-=t;filled++;
+    $('#bx').querySelectorAll('.box.new').forEach(x=>x.classList.remove('new'));
+    $('#bx').insertAdjacentHTML('beforeend',`<div class="box new"><div class="box-in">${miniSVG(t)}</div><span class="tag">${filled*t}</span></div>`);
+    draw();
+    if(!left){$('#fillRow').hidden=true;$('#bq').hidden=false;$('#ch .choice')&&$('#ch .choice').focus({preventScroll:true})}
+  };
+  choiceButtons(list,n,
+    `Yes! ${n} boxes of ${t} hold ${total} cookies. <span class="eq">${total} ÷ ${t} = ${n}</span>`,
+    `Not yet. Count the boxes, not the cookies.`);
+}
+
+function stepDone(){
+  const n=streak(),other=P.kind==='times'?'div':'times',otherName=other==='div'?'sharing':'times';
+  const msg=P.practice?'Practice makes perfect bakers. Want another batch?'
+    :`You have baked ${n} day${n===1?'':'s'} in a row. Come back tomorrow for new puzzles.`;
+  const title=P.practice?'Batch finished!':`Today's ${P.kind==='div'?'sharing':'times'} sticker is yours!`;
+  const otherBtn=!P.practice&&!doneOn(other,TODAY)?`<button class="go" id="other">Try today's ${otherName} bake</button>`:'';
+  stage.innerHTML=`<div class="done"><div class="sticker">${stickerSVG(P.kind)}</div>
+    <div class="txt"><h3>${title}</h3><p>${msg}</p>
+    <div class="act" style="justify-content:flex-start">${otherBtn}<button class="${otherBtn?'ghost':'go'}" id="again">Bake a practice batch</button></div></div></div>`;
+  $('#again').onclick=()=>newPuzzle(P.kind,true);
+  if(otherBtn)$('#other').onclick=()=>switchKind(other);
+}
+
+/* tabs & level */
+function openToday(k){newPuzzle(k,false);if(doneOn(k,TODAY)){P.step=4;render()}}
+function switchKind(k){kind=k;store.set('ttb-mode',k);openToday(k)}
+$$('.tabs button').forEach(b=>b.addEventListener('click',()=>switchKind(b.dataset.kind)));
+function setLevelButtons(){$$('.seg button[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.level===level)))}
+$$('.seg button[data-level]').forEach(b=>b.addEventListener('click',()=>{level=b.dataset.level;store.set('ttb-level',level);setLevelButtons();newPuzzle(kind,false)}));
+setLevelButtons();
+
+/* static diagrams */
+$('#heroArt').innerHTML=traySVG(3,4,{labels:['4','8','12'],scale:1.05})+'<span class="cap eq">3 × 4 = 12</span>';
+const cards=list=>list.map(([n,h,svg,p])=>`<div class="lcard"><span class="num">${n}</span><h3>${h}</h3><div class="pic">${svg}</div><p>${p}</p></div>`).join('');
+$('#learn').innerHTML=cards([
+  ['Step 1','Equal groups',platesSVG(3,4),'3 plates with 4 cookies on each plate.'],
+  ['Step 2','Make a tray',traySVG(3,4),'Line the plates up as rows. Now it is <b>3 rows of 4</b>.'],
+  ['Step 3','Count by rows',traySVG(3,4,{labels:['4','8','12']}),'Count 4, 8, 12. So <span class="eq">3 × 4 = 12</span>.'],
+  ['Step 4','Turn the tray',traySVG(4,3),'4 rows of 3 is still 12. <span class="eq">4 × 3 = 3 × 4</span>'],
+]);
+$('#learnDiv').innerHTML=cards([
+  ['Step 1','Start with a pile',pileSVG(12,12,1.2,6),'12 cookies and 3 hungry friends. How many does each friend get?'],
+  ['Step 2','Deal them out',platesSVG(3,4),'Give one to each plate, again and again. Each plate gets 4. <span class="eq">12 ÷ 3 = 4</span>'],
+  ['Step 3','A tray backwards',traySVG(3,4,{labels:['4','8','12']}),'12 cookies in 3 rows means 4 in each row. Sharing undoes times.'],
+  ['Step 4','The fact triangle',triSVG(12,3,4),'One triangle, four facts: <span class="eq">3 × 4 = 12</span>, <span class="eq">4 × 3 = 12</span>, <span class="eq">12 ÷ 3 = 4</span>, <span class="eq">12 ÷ 4 = 3</span>.'],
+]);
+
+/* free play: giant 20 × 20 tray */
+(function(){
+  const N=20,C=26,P0=30,W=P0+N*C+6;
+  let s=`<svg viewBox="0 0 ${W} ${W}" class="board" tabindex="0" role="application" aria-label="Giant times tray, up to 20 by 20. Tap a spot, or use the arrow keys.">`;
+  s+=`<rect x="${P0-4}" y="${P0-4}" width="${N*C+8}" height="${N*C+8}" rx="14" class="tray-b"/>`;
+  for(let i=0;i<N;i++){
+    s+=`<text class="ax" data-ax="c${i+1}" x="${P0+i*C+C/2}" y="${P0/2}" dominant-baseline="central">${i+1}</text>`;
+    s+=`<text class="ax" data-ax="r${i+1}" x="${P0/2-2}" y="${P0+i*C+C/2}" dominant-baseline="central">${i+1}</text>`;
+  }
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const cx=P0+c*C+C/2,cy=P0+r*C+C/2;
+    s+=`<g class="cell" data-r="${r+1}" data-c="${c+1}"><rect class="hit" x="${P0+c*C}" y="${P0+r*C}" width="${C}" height="${C}"/><circle class="dimple" cx="${cx}" cy="${cy}" r="6"/>${cookie(cx,cy,10.5)}</g>`;
+  }
+  for(const k of [5,10,15]){const x=P0+k*C;
+    s+=`<line class="guide" x1="${x}" y1="${P0-2}" x2="${x}" y2="${P0+N*C+2}"/><line class="guide" x1="${P0-2}" y1="${x}" x2="${P0+N*C+2}" y2="${x}"/>`}
+  $('#boardWrap').innerHTML=s+'</svg>';
+  const board=$('#boardWrap svg'),cells=[...board.querySelectorAll('.cell')],axes=[...board.querySelectorAll('.ax')];
+  let lr=3,lc=4;
+  function show(r,c){
+    cells.forEach(g=>g.classList.toggle('on',+g.dataset.r<=r&&+g.dataset.c<=c));
+    axes.forEach(t=>{const k=t.dataset.ax,v=+k.slice(1);t.classList.toggle('on',k[0]==='r'?v===r:v===c)});
+    $('#bEq').textContent=`${r} × ${c} = ${r*c}`;
+    $('#bWords').textContent=`${r} row${r>1?'s':''} of ${c} cookie${c>1?'s':''}`;
+    $('#bDiv').innerHTML=r===c?`Sharing: <span class="eq">${r*c} ÷ ${r} = ${c}</span>`
+      :`Sharing: <span class="eq">${r*c} ÷ ${r} = ${c}</span> and <span class="eq">${r*c} ÷ ${c} = ${r}</span>`;
+  }
+  board.addEventListener('click',e=>{const g=e.target.closest('.cell');if(!g)return;lr=+g.dataset.r;lc=+g.dataset.c;show(lr,lc)});
+  board.addEventListener('pointerover',e=>{if(e.pointerType!=='mouse')return;const g=e.target.closest('.cell');if(g)show(+g.dataset.r,+g.dataset.c)});
+  board.addEventListener('pointerleave',()=>show(lr,lc));
+  board.addEventListener('keydown',e=>{
+    const m={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];if(!m)return;
+    e.preventDefault();lr=Math.min(N,Math.max(1,lr+m[0]));lc=Math.min(N,Math.max(1,lc+m[1]));show(lr,lc);
+  });
+  show(lr,lc);
+})();
+
+/* ---- Cookie Rush: speed game. Faster right answers earn more; nothing is ever taken away. ---- */
+(function(){
+  const root=$('#game'),R=Math.random,RUSH_MS=60000,RELAX_Q=20;
+  const OPN={times:'Times ×',div:'Sharing ÷',mix:'Mix'},LVN={starter:'2, 5, 10',next:'2, 3, 4',big:'6 to 9'};
+  const FAST=['Lightning fast!','Zoom!','Super speedy!','Rocket baker!'],MID=['Speedy!','Great!','Nice one!','Brilliant!'],OK=['Correct!','Yes!','Well done!','You got it!'];
+  let opt={op:store.get('ttb-g-op','times'),len:store.get('ttb-g-len','rush')};
+  if(!OPN[opt.op])opt.op='times';if(opt.len!=='rush'&&opt.len!=='relax')opt.len='rush';
+  let G=null,timers=[];
+  const later=(fn,ms)=>{timers.push(setTimeout(fn,ms))};
+  const clearAll=()=>{timers.forEach(clearTimeout);timers=[]};
+  const keyFor=()=>`${level}|${opt.op}|${opt.len}`;
+  const bests=()=>store.get('ttb-best',{});
+
+  function jarSVG(n,popLast){
+    let s=`<svg viewBox="0 0 160 206" role="img" aria-label="Cookie jar with ${n} cookies">`;
+    s+='<rect x="34" y="6" width="92" height="20" rx="7" class="jar-lid"/><rect x="14" y="24" width="132" height="176" rx="26" class="jar-glass"/>';
+    const shown=Math.min(n,30);
+    for(let i=0;i<shown;i++){const r=Math.floor(i/5),c=i%5;s+=cookie(32+c*24,182-r*25,11,popLast&&i===shown-1)}
+    if(n>30)s+=`<text x="80" y="44" class="jar-more" dominant-baseline="central">+${n-30}</text>`;
+    return s+'<rect x="24" y="36" width="9" height="110" rx="4.5" class="jar-shine"/></svg>';
+  }
+  const starSVG=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path class="${on?'star-on':'star-off'}" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" stroke-linejoin="round"/></svg>`;
+
+  function home(){
+    G=null;clearAll();
+    const b=bests()[keyFor()];
+    root.innerHTML=`<div class="g-start">
+      <div class="g-opts">
+        <p class="g-lead">Answer as many as you can. <b>Faster answers bake bonus points.</b> A wrong answer never loses points, and it comes back later so you can get it right.</p>
+        <div class="g-row"><span class="wk-l">Questions</span><div class="seg" role="group" aria-label="Question type">${Object.keys(OPN).map(k=>`<button data-op="${k}" aria-pressed="${opt.op===k}">${OPN[k]}</button>`).join('')}</div></div>
+        <div class="g-row"><span class="wk-l">Clock</span><div class="seg" role="group" aria-label="Clock">${[['rush','60 seconds'],['relax','Relaxed: 20 questions']].map(([k,l])=>`<button data-len="${k}" aria-pressed="${opt.len===k}">${l}</button>`).join('')}</div></div>
+        <p class="small">Tables ${LVN[level]}. Change the level at the top of the page. Keys 1 to 4 also pick an answer.</p>
+        <div class="act" style="justify-content:flex-start"><button class="go" id="gStart">Start Cookie Rush</button></div>
+      </div>
+      <div class="g-side"><div class="jar">${jarSVG(b?Math.min(b.correct,30):8)}</div><p class="cap">${b?`Your best: ${b.score} points`:'No best score yet. Have a go!'}</p></div>
+    </div>`;
+    root.querySelectorAll('[data-op]').forEach(x=>x.onclick=()=>{opt.op=x.dataset.op;store.set('ttb-g-op',opt.op);home()});
+    root.querySelectorAll('[data-len]').forEach(x=>x.onclick=()=>{opt.len=x.dataset.len;store.set('ttb-g-len',opt.len);home()});
+    $('#gStart').onclick=countdown;
+  }
+  function countdown(){
+    clearAll();G={state:'count'};
+    root.innerHTML='<div class="g-count" aria-live="assertive"><span id="gc">3</span><p class="tip">Get ready!</p></div>';
+    ['3','2','1','Go!'].forEach((v,i)=>later(()=>{const el=$('#gc');if(!el)return;el.textContent=v;el.classList.remove('beat');void el.offsetWidth;el.classList.add('beat')},i*650));
+    later(start,4*650);
+  }
+  function start(){
+    G={state:'play',key:keyFor(),lvl:level,op:opt.op,len:opt.len,score:0,correct:0,asked:0,streak:0,bestStreak:0,fastest:null,
+       missed:[],fixed:new Set(),queue:[],last:'',elapsed:0,paused:false,lastT:performance.now(),busy:false};
+    root.innerHTML=`<div class="g-play">
+      <div class="g-main">
+        <div class="g-hud">
+          <div class="g-score"><span class="wk-l">Points</span><span id="gs">0</span></div>
+          ${G.len==='rush'?'<div class="timer" aria-hidden="true"><i id="gt"></i></div><span class="g-secs" id="gsec">60 s</span>':`<span class="g-secs" id="gprog">1 of ${RELAX_Q}</span>`}
+        </div>
+        <p class="g-q" id="gq"></p>
+        <div class="g-ch" id="gch"></div>
+        <p class="g-msg" id="gm" aria-live="polite"></p>
+        <div class="g-pops" id="gpops"></div>
+      </div>
+      <div class="g-side"><div class="jar" id="gjar">${jarSVG(0)}</div><p class="cap" id="gstreak">&nbsp;</p></div>
+    </div>
+    <div class="act"><button class="ghost" id="gStop">Stop and see my score</button></div>`;
+    $('#gch').addEventListener('click',e=>{const b=e.target.closest('.choice');if(b&&!b.disabled)answer(b)});
+    $('#gStop').onclick=finish;
+    next();
+    requestAnimationFrame(loop);
+  }
+  function loop(t){
+    if(!G||G.state!=='play')return;
+    const dt=Math.max(0,t-G.lastT);G.lastT=t;if(!G.paused)G.elapsed+=dt;
+    if(G.len==='rush'){
+      const left=Math.max(0,RUSH_MS-G.elapsed),bar=$('#gt');
+      bar.style.transform=`scaleX(${left/RUSH_MS})`;bar.classList.toggle('low',left<10000);
+      $('#gsec').textContent=Math.ceil(left/1000)+' s';
+      if(left<=0){finish();return}
+    }
+    requestAnimationFrame(loop);
+  }
+  function makeQ(){
+    const L=LEVELS[G.lvl];let q;
+    for(let i=0;i<20;i++){
+      const op=G.op==='mix'?(R()<.5?'div':'times'):G.op,t=pick(R,L.tables),n=2+Math.floor(R()*9);
+      if(op==='times'){const[a,b]=R()<.5?[t,n]:[n,t];q={text:`${a} × ${b}`,ans:a*b,step:t,op}}
+      else q={text:`${t*n} ÷ ${t}`,ans:n,step:t,op};
+      if(q.text!==G.last)break;
+    }
+    return q;
+  }
+  function choicesFor(q){
+    const a=q.ans,c=q.op==='times'?[a+q.step,a-q.step,a+1,a-1,a+2,a+10,a-2]:[a+1,a-1,a+2,a-2,q.step,a+3];
+    const out=[a];for(const w of shuffle(R,c)){if(out.length<4&&w>0&&!out.includes(w))out.push(w)}
+    let k=3;while(out.length<4){if(!out.includes(a+k))out.push(a+k);k++}
+    return shuffle(R,out);
+  }
+  function next(){
+    if(!G||G.state!=='play')return;
+    if(G.len==='relax'&&G.asked>=RELAX_Q){finish();return}
+    const due=G.queue.length&&G.queue[0].due<=G.asked&&G.queue[0].q.text!==G.last;
+    const q=due?G.queue.shift().q:makeQ();
+    G.q=q;G.last=q.text;G.asked++;
+    if(G.len==='relax')$('#gprog').textContent=`${G.asked} of ${RELAX_Q}`;
+    $('#gq').textContent=q.text+' = ?';
+    $('#gch').innerHTML=choicesFor(q).map(v=>`<button class="choice" data-v="${v}">${v}</button>`).join('');
+    G.qStart=performance.now();G.paused=false;G.busy=false;
+  }
+  function pop(txt){const el=document.createElement('span');el.className='g-pop';el.textContent=txt;$('#gpops').appendChild(el);later(()=>el.remove(),900)}
+  function answer(btn){
+    if(G.busy)return;G.busy=true;
+    const q=G.q,secs=(performance.now()-G.qStart)/1000,all=$$('#gch .choice'),gm=$('#gm');
+    all.forEach(b=>b.disabled=true);
+    if(+btn.dataset.v===q.ans){
+      btn.classList.add('right');
+      const bonus=Math.max(0,Math.min(10,Math.round(10*(1-(secs-1.5)/6))));
+      let pts=10+bonus;
+      G.correct++;G.streak++;G.bestStreak=Math.max(G.bestStreak,G.streak);
+      G.fastest=G.fastest===null?secs:Math.min(G.fastest,secs);
+      let msg=pick(R,bonus>=8?FAST:bonus>=4?MID:OK);
+      if(G.missed.some(m=>m.text===q.text)){G.fixed.add(q.text);msg='You remembered it this time!'}
+      if(G.streak%5===0){pts+=10;msg=`${G.streak} in a row! +10 extra`}
+      G.score+=pts;$('#gs').textContent=G.score;pop('+'+pts);
+      gm.className='g-msg good';gm.textContent=msg;
+      $('#gjar').innerHTML=jarSVG(G.correct,true);
+      $('#gstreak').textContent=G.streak>=2?`${G.streak} in a row`:' ';
+      later(next,450);
+    }else{
+      btn.classList.add('wrong');shake(btn);
+      const right=all.find(b=>+b.dataset.v===q.ans);if(right)right.classList.add('right');
+      G.streak=0;G.paused=true;
+      if(!G.missed.some(m=>m.text===q.text))G.missed.push(q);
+      G.queue.push({q,due:G.asked+3});
+      gm.className='g-msg hint';gm.innerHTML=`Nearly! <span class="eq">${q.text} = ${q.ans}</span>. It will come back soon. The clock waits for you.`;
+      $('#gstreak').textContent=' ';
+      later(next,1900);
+    }
+  }
+  function finish(){
+    if(!G||G.state!=='play')return;
+    G.state='end';clearAll();
+    const all=bests(),prev=all[G.key]||null,isBest=G.score>0&&(!prev||G.score>prev.score);
+    if(isBest){all[G.key]={score:G.score,correct:G.correct};store.set('ttb-best',all)}
+    const stars=1+(G.correct>=10?1:0)+(G.correct>=20||isBest?1:0);
+    let title,note;
+    if(G.correct===0){title='Good try!';note='Every baker starts somewhere. Try Relaxed mode, where there is no clock.'}
+    else if(isBest&&prev){title='New best score!';note=`You beat your old best of ${prev.score} by ${G.score-prev.score} points.`}
+    else if(isBest){title='Your first best score!';note='Play again to try to beat it.'}
+    else{title=G.correct>=G.asked*.8?'Super baking!':'Great practice!';
+      const gap=prev.score-G.score;note=gap<=40?`Only ${gap} points from your best of ${prev.score}. So close!`:`Your best is ${prev.score}. Every round makes your brain faster.`}
+    const tile=(l,v)=>`<div class="tile"><span class="wk-l">${l}</span><b>${v}</b></div>`;
+    const miss=G.missed.length?`<div class="g-miss"><span class="wk-l">Facts to practise</span><div class="chips">${G.missed.map(m=>`<span class="chip${G.fixed.has(m.text)?' ok':''}">${m.text} = ${m.ans}${G.fixed.has(m.text)?' ✓':''}</span>`).join('')}</div>${G.fixed.size?'<p class="small">A tick means you got it right the second time. Well done!</p>':''}</div>`:'';
+    root.innerHTML=`<div class="g-end">
+      <div class="g-side"><div class="stars" aria-label="${stars} of 3 stars">${[0,1,2].map(i=>starSVG(i<stars)).join('')}</div><div class="jar">${jarSVG(G.correct)}</div></div>
+      <div class="g-res"><h3>${title}</h3><p>${note}</p>
+        <div class="tiles">${tile('Points',G.score)}${tile('Right answers',G.correct)}${tile('Fastest',G.fastest===null?'–':G.fastest.toFixed(1)+' s')}${tile('Best run',G.bestStreak+' in a row')}</div>
+        ${miss}
+        <div class="act" style="justify-content:flex-start"><button class="go" id="gAgain">Play again</button><button class="ghost" id="gHome">Change game</button></div>
+      </div></div>`;
+    $('#gAgain').onclick=countdown;$('#gHome').onclick=home;
+  }
+  document.addEventListener('keydown',e=>{
+    if(!G||G.state!=='play'||G.busy)return;
+    const i='1234'.indexOf(e.key);if(i<0)return;
+    const b=$$('#gch .choice')[i];if(b){e.preventDefault();answer(b)}
+  });
+  $$('.seg button[data-level]').forEach(b=>b.addEventListener('click',()=>{if(!G||G.state==='end')home()}));
+  home();
+})();
+
+/* start */
+openToday(kind);
+})();
+</script>
+
+</body>
+
+</html>
