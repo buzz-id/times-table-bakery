@@ -285,7 +285,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--accent);ou
     <div class="hero-text">
       <span class="eyebrow">A daily puzzle for 6 to 8 year olds</span>
       <h1>Times Table Bakery</h1>
-      <p class="lede">A times sum is a tray of cookies: <span class="eq">3 × 4</span> means <b>3 rows of 4</b>. A sharing sum is cookies on plates: <span class="eq">12 ÷ 3</span> means <b>12 shared by 3</b>. Bake every day, earn stickers, then race the clock in Cookie Rush.</p>
+      <p class="lede">A times sum is a tray of cookies: <span class="eq">3 × 4</span> means <b>3 rows of 4</b>. A sharing sum is cookies on plates: <span class="eq">12 ÷ 3</span> means <b>12 shared by 3</b>. Bake every day, earn stickers, then play Cookie Rush.</p>
       <div class="controls">
         <div class="seg" role="group" aria-label="Which times tables">
           <button data-level="starter" aria-pressed="true">2, 5, 10</button>
@@ -335,7 +335,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--accent);ou
 
   <section class="card" aria-labelledby="gameH">
     <div class="head">
-      <span class="eyebrow">Speed game</span>
+      <span class="eyebrow">Game</span>
       <h2 id="gameH">Cookie Rush</h2>
     </div>
     <div id="game"></div>
@@ -371,7 +371,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--accent);ou
       <ul>
         <li>Wrong answers just fade out. Let your child try again. Point at the rows or plates rather than giving the answer.</li>
         <li>Share real things: grapes onto plates, cards to players. Find arrays at home: egg cartons, muffin tins, window panes.</li>
-        <li>Cookie Rush is optional speed practice. Points never go down, and a missed fact comes back later in the same round. If the clock feels stressful, pick Relaxed mode.</li>
+        <li>Cookie Rush starts in No timer mode: 10 questions, no clock and no speed points. Switch to 60 seconds once your child feels confident. In both modes points never go down, and a missed fact comes back later in the same round.</li>
         <li>Stickers, the streak and best scores are saved in this browser on this device only.</li>
       </ul>
     </div>
@@ -819,11 +819,12 @@ $('#learnDiv').innerHTML=cards([
 
 /* ---- Cookie Rush: speed game. Faster right answers earn more; nothing is ever taken away. ---- */
 (function(){
-  const root=$('#game'),R=Math.random,RUSH_MS=60000,RELAX_Q=20;
+  const root=$('#game'),R=Math.random,RUSH_MS=60000,CALM_Q=10;
   const OPN={times:'Times ×',div:'Sharing ÷',mix:'Mix'},LVN={starter:'2, 5, 10',next:'2, 3, 4',big:'6 to 9'};
   const FAST=['Lightning fast!','Zoom!','Super speedy!','Rocket baker!'],MID=['Speedy!','Great!','Nice one!','Brilliant!'],OK=['Correct!','Yes!','Well done!','You got it!'];
-  let opt={op:store.get('ttb-g-op','times'),len:store.get('ttb-g-len','rush')};
-  if(!OPN[opt.op])opt.op='times';if(opt.len!=='rush'&&opt.len!=='relax')opt.len='rush';
+  const CALM=['Yes!','Well done!','Great!','You got it!','Lovely baking!','Brilliant!'];
+  let opt={op:store.get('ttb-g-op','times'),len:store.get('ttb-g-len','calm')};
+  if(!OPN[opt.op])opt.op='times';if(opt.len!=='rush')opt.len='calm';
   let G=null,timers=[];
   const later=(fn,ms)=>{timers.push(setTimeout(fn,ms))};
   const clearAll=()=>{timers.forEach(clearTimeout);timers=[]};
@@ -845,18 +846,22 @@ $('#learnDiv').innerHTML=cards([
     const b=bests()[keyFor()];
     root.innerHTML=`<div class="g-start">
       <div class="g-opts">
-        <p class="g-lead">Answer as many as you can. <b>Faster answers bake bonus points.</b> A wrong answer never loses points, and it comes back later so you can get it right.</p>
+        <p class="g-lead">${opt.len==='calm'
+          ?`<b>Take your time. There is no clock.</b> Answer ${CALM_Q} questions. Every right answer bakes 10 points. A wrong answer never loses points, and it comes back later so you can get it right.`
+          :'Answer as many as you can in 60 seconds. <b>Faster answers bake bonus points.</b> A wrong answer never loses points, and it comes back later so you can get it right.'}</p>
         <div class="g-row"><span class="wk-l">Questions</span><div class="seg" role="group" aria-label="Question type">${Object.keys(OPN).map(k=>`<button data-op="${k}" aria-pressed="${opt.op===k}">${OPN[k]}</button>`).join('')}</div></div>
-        <div class="g-row"><span class="wk-l">Clock</span><div class="seg" role="group" aria-label="Clock">${[['rush','60 seconds'],['relax','Relaxed: 20 questions']].map(([k,l])=>`<button data-len="${k}" aria-pressed="${opt.len===k}">${l}</button>`).join('')}</div></div>
-        <p class="small">Tables ${LVN[level]}. Change the level at the top of the page. Keys 1 to 4 also pick an answer.</p>
+        <div class="g-row"><span class="wk-l">Clock</span><div class="seg" role="group" aria-label="Clock">${[['calm','No timer'],['rush','60 seconds']].map(([k,l])=>`<button data-len="${k}" aria-pressed="${opt.len===k}">${l}</button>`).join('')}</div></div>
+        <p class="small">${opt.len==='calm'?'New to Cookie Rush? Start here. Try 60 seconds when the answers feel easy. ':''}Tables ${LVN[level]}. Change the level at the top of the page. Keys 1 to 4 also pick an answer.</p>
         <div class="act" style="justify-content:flex-start"><button class="go" id="gStart">Start Cookie Rush</button></div>
       </div>
       <div class="g-side"><div class="jar">${jarSVG(b?Math.min(b.correct,30):8)}</div><p class="cap">${b?`Your best: ${b.score} points`:'No best score yet. Have a go!'}</p></div>
     </div>`;
     root.querySelectorAll('[data-op]').forEach(x=>x.onclick=()=>{opt.op=x.dataset.op;store.set('ttb-g-op',opt.op);home()});
     root.querySelectorAll('[data-len]').forEach(x=>x.onclick=()=>{opt.len=x.dataset.len;store.set('ttb-g-len',opt.len);home()});
-    $('#gStart').onclick=countdown;
+    $('#gStart').onclick=begin;
   }
+  /* the calm mode skips the 3-2-1 countdown */
+  function begin(){opt.len==='calm'?start():countdown()}
   function countdown(){
     clearAll();G={state:'count'};
     root.innerHTML='<div class="g-count" aria-live="assertive"><span id="gc">3</span><p class="tip">Get ready!</p></div>';
@@ -870,7 +875,7 @@ $('#learnDiv').innerHTML=cards([
       <div class="g-main">
         <div class="g-hud">
           <div class="g-score"><span class="wk-l">Points</span><span id="gs">0</span></div>
-          ${G.len==='rush'?'<div class="timer" aria-hidden="true"><i id="gt"></i></div><span class="g-secs" id="gsec">60 s</span>':`<span class="g-secs" id="gprog">1 of ${RELAX_Q}</span>`}
+          ${G.len==='rush'?'<div class="timer" aria-hidden="true"><i id="gt"></i></div><span class="g-secs" id="gsec">60 s</span>':`<span class="g-secs" id="gprog">Question 1 of ${CALM_Q}</span>`}
         </div>
         <p class="g-q" id="gq"></p>
         <div class="g-ch" id="gch"></div>
@@ -879,7 +884,7 @@ $('#learnDiv').innerHTML=cards([
       </div>
       <div class="g-side"><div class="jar" id="gjar">${jarSVG(0)}</div><p class="cap" id="gstreak">&nbsp;</p></div>
     </div>
-    <div class="act"><button class="ghost" id="gStop">Stop and see my score</button></div>`;
+    <div class="act"><button class="ghost" id="gStop">${G.len==='calm'?'Finish early':'Stop and see my score'}</button></div>`;
     $('#gch').addEventListener('click',e=>{const b=e.target.closest('.choice');if(b&&!b.disabled)answer(b)});
     $('#gStop').onclick=finish;
     next();
@@ -914,11 +919,11 @@ $('#learnDiv').innerHTML=cards([
   }
   function next(){
     if(!G||G.state!=='play')return;
-    if(G.len==='relax'&&G.asked>=RELAX_Q){finish();return}
+    if(G.len==='calm'&&G.asked>=CALM_Q){finish();return}
     const due=G.queue.length&&G.queue[0].due<=G.asked&&G.queue[0].q.text!==G.last;
     const q=due?G.queue.shift().q:makeQ();
     G.q=q;G.last=q.text;G.asked++;
-    if(G.len==='relax')$('#gprog').textContent=`${G.asked} of ${RELAX_Q}`;
+    if(G.len==='calm')$('#gprog').textContent=`Question ${G.asked} of ${CALM_Q}`;
     $('#gq').textContent=q.text+' = ?';
     $('#gch').innerHTML=choicesFor(q).map(v=>`<button class="choice" data-v="${v}">${v}</button>`).join('');
     G.qStart=performance.now();G.paused=false;G.busy=false;
@@ -930,11 +935,11 @@ $('#learnDiv').innerHTML=cards([
     all.forEach(b=>b.disabled=true);
     if(+btn.dataset.v===q.ans){
       btn.classList.add('right');
-      const bonus=Math.max(0,Math.min(10,Math.round(10*(1-(secs-1.5)/6))));
+      const bonus=G.len==='calm'?0:Math.max(0,Math.min(10,Math.round(10*(1-(secs-1.5)/6))));
       let pts=10+bonus;
       G.correct++;G.streak++;G.bestStreak=Math.max(G.bestStreak,G.streak);
       G.fastest=G.fastest===null?secs:Math.min(G.fastest,secs);
-      let msg=pick(R,bonus>=8?FAST:bonus>=4?MID:OK);
+      let msg=pick(R,G.len==='calm'?CALM:bonus>=8?FAST:bonus>=4?MID:OK);
       if(G.missed.some(m=>m.text===q.text)){G.fixed.add(q.text);msg='You remembered it this time!'}
       if(G.streak%5===0){pts+=10;msg=`${G.streak} in a row! +10 extra`}
       G.score+=pts;$('#gs').textContent=G.score;pop('+'+pts);
@@ -948,9 +953,9 @@ $('#learnDiv').innerHTML=cards([
       G.streak=0;G.paused=true;
       if(!G.missed.some(m=>m.text===q.text))G.missed.push(q);
       G.queue.push({q,due:G.asked+3});
-      gm.className='g-msg hint';gm.innerHTML=`Nearly! <span class="eq">${q.text} = ${q.ans}</span>. It will come back soon. The clock waits for you.`;
+      gm.className='g-msg hint';gm.innerHTML=`Nearly! <span class="eq">${q.text} = ${q.ans}</span>. It will come back soon.${G.len==='rush'?' The clock waits for you.':''}`;
       $('#gstreak').textContent=' ';
-      later(next,1900);
+      later(next,G.len==='calm'?2400:1900);
     }
   }
   function finish(){
@@ -958,9 +963,9 @@ $('#learnDiv').innerHTML=cards([
     G.state='end';clearAll();
     const all=bests(),prev=all[G.key]||null,isBest=G.score>0&&(!prev||G.score>prev.score);
     if(isBest){all[G.key]={score:G.score,correct:G.correct};store.set('ttb-best',all)}
-    const stars=1+(G.correct>=10?1:0)+(G.correct>=20||isBest?1:0);
+    const stars=G.len==='calm'?1+(G.correct>=CALM_Q/2?1:0)+(G.correct>=CALM_Q*.8||isBest?1:0):1+(G.correct>=10?1:0)+(G.correct>=20||isBest?1:0);
     let title,note;
-    if(G.correct===0){title='Good try!';note='Every baker starts somewhere. Try Relaxed mode, where there is no clock.'}
+    if(G.correct===0){title='Good try!';note=G.len==='calm'?'Every baker starts somewhere. Look at the trays at the top of the page, then have another go.':'Every baker starts somewhere. Try No timer mode, where there is no clock.'}
     else if(isBest&&prev){title='New best score!';note=`You beat your old best of ${prev.score} by ${G.score-prev.score} points.`}
     else if(isBest){title='Your first best score!';note='Play again to try to beat it.'}
     else{title=G.correct>=G.asked*.8?'Super baking!':'Great practice!';
@@ -970,11 +975,11 @@ $('#learnDiv').innerHTML=cards([
     root.innerHTML=`<div class="g-end">
       <div class="g-side"><div class="stars" aria-label="${stars} of 3 stars">${[0,1,2].map(i=>starSVG(i<stars)).join('')}</div><div class="jar">${jarSVG(G.correct)}</div></div>
       <div class="g-res"><h3>${title}</h3><p>${note}</p>
-        <div class="tiles">${tile('Points',G.score)}${tile('Right answers',G.correct)}${tile('Fastest',G.fastest===null?'–':G.fastest.toFixed(1)+' s')}${tile('Best run',G.bestStreak+' in a row')}</div>
+        <div class="tiles">${tile('Points',G.score)}${tile('Right answers',G.correct)}${G.len==='calm'?tile('Questions',G.asked):tile('Fastest',G.fastest===null?'–':G.fastest.toFixed(1)+' s')}${tile('Best run',G.bestStreak+' in a row')}</div>
         ${miss}
         <div class="act" style="justify-content:flex-start"><button class="go" id="gAgain">Play again</button><button class="ghost" id="gHome">Change game</button></div>
       </div></div>`;
-    $('#gAgain').onclick=countdown;$('#gHome').onclick=home;
+    $('#gAgain').onclick=begin;$('#gHome').onclick=home;
   }
   document.addEventListener('keydown',e=>{
     if(!G||G.state!=='play'||G.busy)return;
