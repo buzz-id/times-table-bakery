@@ -3,14 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<meta name="description" content="Multiplication and division for 6 to 8 year olds, taught with trays of cookies. Daily puzzles, stickers and the Cookie Rush game. Works offline.">
+<meta name="theme-color" content="#E9F4F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1C26" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bakery">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/fredoka.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+@font-face{font-family:"Fredoka";font-style:normal;font-weight:300 700;font-display:swap;src:url("fonts/fredoka.woff2") format("woff2")}
+@font-face{font-family:"Nunito";font-style:normal;font-weight:200 1000;font-display:swap;src:url("fonts/nunito.woff2") format("woff2")}
+.offline-note{margin:0 auto;max-width:940px;font:700 .85rem/1.4 "Nunito","Segoe UI",system-ui,sans-serif;color:var(--muted,#557083);text-align:center}
+</style>
 </head>
 <body>
 <title>Times Table Bakery</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
 /* Layout: one centred column of "kitchen counters" (cards); times = trays of cookies (rows × columns), sharing = cookies dealt onto plates. */
 :root{
@@ -995,6 +1009,22 @@ openToday(kind);
 })();
 </script>
 
+<script>
+(function(){
+  if(!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').then(function(){
+      return navigator.serviceWorker.ready;
+    }).then(function(){
+      var wrap = document.querySelector('.wrap');
+      if(!wrap || document.querySelector('.offline-note')) return;
+      var p = document.createElement('p');
+      p.className = 'offline-note';
+      p.textContent = 'Saved on this device. Times Table Bakery now works without wifi.';
+      wrap.appendChild(p);
+    }).catch(function(){ /* offline saving is a bonus; the page works without it */ });
+  });
+})();
+</script>
 </body>
-
 </html>
